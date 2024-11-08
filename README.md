@@ -4,6 +4,10 @@ WhoDAT is a GUI-based cybersecurity tool for nerds.
 
 Analyze emails, URLs, headers, IPs, and attachments for threats--using free APIs like VirusTotal, Google Safe Browsing, and Hybrid Analysis.
 
+![Windows](https://img.shields.io/badge/platform-Windows-blue) ![Python](https://img.shields.io/badge/language-Python-darkgreen) ![HTML](https://img.shields.io/badge/language-HTML-orange) ![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white)
+
+[<img src="https://github.com/calinux-py/WhoDAT/blob/main/config/2024-11-07%2018-40-02.gif?raw=true" alt="UniUI" width="63%">](https://github.com/calinux-py/WhoDAT/blob/main/config/2024-11-07%2018-40-02.gif)
+
 ## Features
 
 ### 🌐 Domain Analyzer
