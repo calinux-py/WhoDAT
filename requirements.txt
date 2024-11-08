@@ -1,0 +1,8 @@
+PyQt5
+requests
+urllib3
+configparser
+pytz
+tldextract
+python-whois
+dateutil
