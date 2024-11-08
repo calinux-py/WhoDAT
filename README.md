@@ -60,13 +60,19 @@ WhoDAT requires API keys from several services. All are FREE (except openai but 
 
 ```
 NOTE: config/config.ini MUST be in the same directory as whodat.py/whodat.exe.
-WhoDAT/
+
+WhoDAT(Python)/
 ├── whodat.py
 ├── utils.py
 ├── gui.py
 ├── analysis.py
 ├── api.py
 ├── config.py
+└── config/
+    └── config.ini
+
+WhoDAT(Portable Executable)/
+├── whodat.exe
 └── config/
     └── config.ini
 ```
