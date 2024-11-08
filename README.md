@@ -1,6 +1,6 @@
 # WhoDAT - InfoSec Analyzer for Nerds
 
-WhoDAT is a cybersecurity tool for nerds. It provides an analysis of emails, URLs, headers, IP addresses, and file attachments to detect potential threats. WhoDAT uses integrations with services like VirusTotal, Google Safe Browsing, OpenAI, and Hybrid Analysis. 
+WhoDAT is a cybersecurity tool for nerds. WhoDAT analyzes emails, URLs, headers, IPs, and attachments for threats--using free APIs like VirusTotal, Google Safe Browsing, and Hybrid Analysis.
 
 ## Features
 
@@ -37,13 +37,13 @@ pip install -r requirements.txt
 ```
 
 ### API Keys
-WhoDAT requires API keys from several services. All are FREE. Add your keys in config/config.ini under the relevant sections:
+WhoDAT requires API keys from several services. All are FREE (except openai but its like a penny). Add your keys in config/config.ini under the relevant sections:
 
-- VirusTotal
+- (VirusTotal)[https://docs.virustotal.com/reference/overview]
 - [Google Safe Browsing](https://console.cloud.google.com/apis/api/safebrowsing.googleapis.com)
-- URLScan
-- OpenAI
-- Hybrid Analysis
+- (URLScan)[https://urlscan.io/docs/api/]
+- (OpenAI)[https://platform.openai.com/docs/overview]
+- (Hybrid Analysis)[https://hybrid-analysis.com/docs/api/v2]
 
 ### Usage
 Run the Application: Start WhoDAT from the command line with:
