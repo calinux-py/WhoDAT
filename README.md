@@ -8,6 +8,7 @@ Analyze emails, URLs, headers, IPs, and attachments for threats--using free APIs
 
 ### 🌐 Domain Analyzer
 Analyze URLs, email addresses, and IP addresses to reveal their threat level:
+- **Website Analysis**: Search if a website is a known malicious site and take a secure screenshot using URLScan.io.
 - **Email Analysis**: Verifies if email domains are free, disposable, or associated with suspicious activity.
 - **URL Analysis**: Scans URLs to detect malware, phishing attempts, and suspicious redirects.
 - **IP Address Analysis**: Checks if an IP address has been associated with previous malicious activity.
