@@ -37,10 +37,10 @@ pip install -r requirements.txt
 ```
 
 ### API Keys
-WhoDAT requires API keys from several services. Add your keys in config/config.ini under the relevant sections:
+WhoDAT requires API keys from several services. All are FREE. Add your keys in config/config.ini under the relevant sections:
 
 - VirusTotal
-- Google Safe Browsing
+- [Google Safe Browsing](https://console.cloud.google.com/apis/api/safebrowsing.googleapis.com)
 - URLScan
 - OpenAI
 - Hybrid Analysis
