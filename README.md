@@ -39,11 +39,11 @@ pip install -r requirements.txt
 ### API Keys
 WhoDAT requires API keys from several services. All are FREE (except openai but its like a penny). Add your keys in config/config.ini under the relevant sections:
 
-- (VirusTotal)[https://docs.virustotal.com/reference/overview]
+- [VirusTotal](https://docs.virustotal.com/reference/overview)
 - [Google Safe Browsing](https://console.cloud.google.com/apis/api/safebrowsing.googleapis.com)
-- (URLScan)[https://urlscan.io/docs/api/]
-- (OpenAI)[https://platform.openai.com/docs/overview]
-- (Hybrid Analysis)[https://hybrid-analysis.com/docs/api/v2]
+- [URLScan](https://urlscan.io/docs/api/)
+- [OpenAI](https://platform.openai.com/docs/overview)
+- [Hybrid Analysis](https://hybrid-analysis.com/docs/api/v2)
 
 ### Usage
 Run the Application: Start WhoDAT from the command line with:
