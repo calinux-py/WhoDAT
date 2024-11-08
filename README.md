@@ -1,3 +1,4 @@
+# [<img src="https://github.com/calinux-py/WhoDAT/blob/main/whodat.png?raw=true" alt="WhoDAT Logo" width="5%">](https://github.com/calinux-py/WhoDAT/tree/main) 
 # WhoDAT - InfoSec Analyzer for Nerds
 
 WhoDAT is a GUI-based cybersecurity tool for nerds. 
