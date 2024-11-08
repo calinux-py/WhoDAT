@@ -1,6 +1,6 @@
 # WhoDAT - InfoSec Analyzer for Nerds
 
-WhoDAT is a cybersecurity tool for nerds. 
+WhoDAT is a GUI-based cybersecurity tool for nerds. 
 
 Analyze emails, URLs, headers, IPs, and attachments for threats--using free APIs like VirusTotal, Google Safe Browsing, and Hybrid Analysis.
 
