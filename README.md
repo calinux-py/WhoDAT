@@ -80,6 +80,7 @@ WhoDAT(Portable Executable)/
 
 ### Usage
 [Download the Python script](https://github.com/calinux-py/WhoDAT/archive/refs/heads/main.zip) or [download the portable executable version](https://github.com/calinux-py/WhoDAT/releases/download/whodat/WhoDATv1.1.zip).
+
 Start the .exe or run whodat.py using Python.
 ```
 python whodat.py
