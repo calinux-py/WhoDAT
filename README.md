@@ -79,8 +79,8 @@ WhoDAT(Portable Executable)/
 ```
 
 ### Usage
-Run the Application: Start WhoDAT from the command line with:
-```powershell
+Start the .exe or run whodat.py using Python.
+```
 python whodat.py
 ```
 
