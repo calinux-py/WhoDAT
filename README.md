@@ -38,6 +38,8 @@ Ensure attachments are safe before opening:
 - **File Scanning**: Uploads files to VirusTotal and Hybrid Analysis to see if malicious or sus.
 - **Real-Time Reports**: Displays detailed findings from VirusTotal and Hybrid Analysis, including detection by antivirus engines and potential threat levels.
 
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -76,6 +78,8 @@ WhoDAT(Portable Executable)/
 └── config/
     └── config.ini
 ```
+
+---
 
 ### Usage
 [Download the Python script](https://github.com/calinux-py/WhoDAT/archive/refs/heads/main.zip) or [download the portable executable version](https://github.com/calinux-py/WhoDAT/releases/download/whodat/WhoDATv1.1.zip).
