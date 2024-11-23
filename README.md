@@ -59,9 +59,8 @@ WhoDAT uses API keys from several services. All are FREE (except openai but its 
 - [OpenAI](https://platform.openai.com/docs/overview)
 - [Hybrid Analysis](https://hybrid-analysis.com/docs/api/v2)
 
+`NOTE: config/config.ini MUST be in the same directory as whodat.py/whodat.exe.`
 ```
-NOTE: config/config.ini MUST be in the same directory as whodat.py/whodat.exe.
-
 WhoDAT(Python)/
 ├── whodat.py
 ├── utils.py
