@@ -51,7 +51,7 @@ pip install -r requirements.txt
 
 *API Keys are NOT required but will limit the usefulness considerably. They are free. Don't be lazy. You can skip the OpenAI API if you don't want AI analysis.*
 
-WhoDAT requires API keys from several services. All are FREE (except openai but its like a penny). Add your keys in config/config.ini under the relevant sections:
+WhoDAT uses API keys from several services. All are FREE (except openai but its like a penny). Add your keys in config/config.ini under the relevant sections:
 
 - [VirusTotal](https://docs.virustotal.com/reference/overview)
 - [Google Safe Browsing](https://console.cloud.google.com/apis/api/safebrowsing.googleapis.com)
