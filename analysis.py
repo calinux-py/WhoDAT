@@ -69,6 +69,13 @@ class AnalyzerThread(QThread):
 
     def run(self):
         try:
+            if self.link:
+                self.emit_output(f"<br><b>Checking if website is up or down:</b> {defang_url(self.link)}")
+                is_up = self.check_website_status(self.link)
+                if is_up:
+                    self.emit_output(f"The website {defang_url(self.link)} is UP.<br>")
+                else:
+                    self.emit_output(f"The website {defang_url(self.link)} is DOWN.<br>")
             if self.email:
                 self.emit_output(f"<br><b>Analyzing Email Address:</b> {defang_email(self.email)}")
                 self.process_email_input()
@@ -89,6 +96,19 @@ class AnalyzerThread(QThread):
         except Exception as e:
             self.error_signal.emit(f"An unexpected error occurred: {e}")
             self.emit_output("<i><span style='color:lightgrey;'>Skipping analysis due to an unexpected error.</span></i><br>")
+
+    def check_website_status(self, url):
+        full_link = url
+        if not full_link.startswith(('http://', 'https://')):
+            full_link = 'http://' + full_link
+        try:
+            response = requests.head(full_link, allow_redirects=True, timeout=10)
+            if response.status_code < 400:
+                return True
+            else:
+                return False
+        except Exception:
+            return False
 
     def fetch_and_process_whois(self, domain_name, domain_label):
         try:
