@@ -14,6 +14,9 @@ import pytz
 import tldextract
 import whois
 from dateutil import parser as date_parser
+import matplotlib.pyplot as plt
+import io
+import base64
 
 from config import (
     get_virustotal_api_key,
@@ -69,30 +72,22 @@ class AnalyzerThread(QThread):
 
     def run(self):
         try:
-            if self.link:
-                self.emit_output(f"<br><b>Checking if website is up or down:</b> {defang_url(self.link)}")
-                is_up = self.check_website_status(self.link)
-                if is_up:
-                    self.emit_output(f"The website {defang_url(self.link)} is UP.<br>")
-                else:
-                    self.emit_output(f"The website {defang_url(self.link)} is DOWN.<br>")
             if self.email:
-                self.emit_output(f"<br><b>Analyzing Email Address:</b> {defang_email(self.email)}")
+                self.emit_output(f"<div style='background-color: #5E5E5E; padding: 30px; margin: 20px 0; border-radius: 15px;'><b style='font-size: 24px;'><h1>Analyzing Email Address</h1></b></div>Target: {defang_email(self.email)}<br>")
                 self.process_email_input()
             if self.link:
-                self.emit_output(f"<br><b>Analyzing Link:</b> {defang_url(self.link)}")
                 self.process_link_input()
             if not self.email and not self.link:
                 self.error_signal.emit("No email or link provided.")
                 self.emit_output("<i><span style='color:lightgrey;'>Skipping analysis because no input was provided.</span></i><br>")
             if self.openai_api_key and self.report.strip():
-                self.emit_output("<i><span style='color:lightgrey;'>Sending report to AI for analysis...</span></i><br>")
+                self.emit_output("<br><i><span style='color:lightgrey;'>Sending report to AI for analysis...</span></i><br><br>")
                 ai_response, ai_error = get_openai_analysis(self.report)
                 if ai_error:
                     self.error_signal.emit(ai_error)
                     self.emit_output("<i><span style='color:lightgrey;'>Skipping AI Analysis due to an error.</span></i><br>")
                 elif ai_response:
-                    self.emit_output(f"<br><b>AI Analysis:</b><br>{ai_response}<br>")
+                    self.emit_output(f"{ai_response}<br>")
         except Exception as e:
             self.error_signal.emit(f"An unexpected error occurred: {e}")
             self.emit_output("<i><span style='color:lightgrey;'>Skipping analysis due to an unexpected error.</span></i><br>")
@@ -121,8 +116,8 @@ class AnalyzerThread(QThread):
                 if response.status_code == 200:
                     disify_data = response.json()
                     disposable_status = disify_data.get("disposable", "Unknown")
-                    output = "Disposable Email: {}".format(
-                        '<span style="color:red">YES</span>' if disposable_status else 'No') + "<br>"
+                    output = "<br>Disposable Email: {}".format(
+                        '<span style="color:#ff6666">YES</span>' if disposable_status else 'No') + "<br>"
                     self.emit_output(output)
                 else:
                     self.error_signal.emit(f"Error checking disposable status for {self.email}: {response.status_code}")
@@ -148,7 +143,7 @@ class AnalyzerThread(QThread):
 
         self.fetch_and_process_whois(registered_domain, "Email Domain")
         if self.email and self.is_free_email(registered_domain):
-            self.emit_output(f"Email Domain {registered_domain} is a <span style='color:red;'>FREE</span> email provider.<br>")
+            self.emit_output(f"Email Domain {registered_domain} is a <span style='color:#ff6666;'>FREE</span> email provider.<br>")
 
     def is_free_email(self, domain):
         return domain.lower() in FREE_EMAIL_DOMAINS
@@ -161,8 +156,21 @@ class AnalyzerThread(QThread):
             response = requests.get(full_link, allow_redirects=True, timeout=10)
         except Exception as e:
             self.error_signal.emit(f"Could not fetch the link: {e}")
-            self.emit_output("<i><span style='color:lightgrey;'>Skipping Link Analysis due to an error fetching the URL.</span></i><br>")
+            self.emit_output(
+                "<br><br><i><span style='color:lightgrey;'>Skipping Link Analysis due to an error fetching the URL.</span></i><br>")
             return
+
+        self.emit_output(
+            f"<div style='background-color: #5E5E5E; padding: 30px; margin: 20px 0; border-radius: 15px;'><b style='font-size: 24px;'><h1>Analyzing Link</h1></b></div>Target: {defang_url(self.link)}<br>")
+
+        self.emit_output(f"<br><b>Checking if website is up or down:</b> {defang_url(self.link)}")
+        is_up = self.check_website_status(self.link)
+        if is_up:
+            self.emit_output(
+                f"[ + ] The website {defang_url(self.link)} is <span style='color:#66b266;'>UP</span>.<br>")
+        else:
+            self.emit_output(
+                f"[ - ] The website {defang_url(self.link)} is <span style='color:#ff6666;'>DOWN.</span><br>")
 
         parsed_start_url = urllib.parse.urlparse(full_link)
         start_domain = parsed_start_url.hostname
@@ -175,7 +183,8 @@ class AnalyzerThread(QThread):
                 self.emit_output("<br><i><span style='color:lightgrey;'>Analyzing URL and Redirects...</span></i><br>")
             self.process_redirect_chain(response)
         else:
-            self.emit_output("<span style='color:red;'>Skipping WHOIS and URLScan scanning because URL contains safebrowse.io</span><br>")
+            self.emit_output(
+                "<span style='color:#ff6666;'>Skipping WHOIS and URLScan scanning because URL contains safebrowse.io</span><br>")
 
         final_url = response.url
         parsed_final_url = urllib.parse.urlparse(final_url)
@@ -187,7 +196,8 @@ class AnalyzerThread(QThread):
             if final_registered_domain:
                 self.fetch_and_process_whois(final_registered_domain, "Final URL Domain")
         else:
-            self.emit_output("<i><span style='color:lightgrey;'>Skipping WHOIS and UrlScan for Final URL because it contains safebrowse.io.</span></i>")
+            self.emit_output(
+                "<i><span style='color:lightgrey;'>Skipping WHOIS and UrlScan for Final URL because it contains safebrowse.io.</span></i>")
 
         self.emit_output("<br><i><span style='color:lightgrey;'>Generating VirusTotal Report...</span></i><br>")
 
@@ -197,45 +207,60 @@ class AnalyzerThread(QThread):
                 if vt_report:
                     self.process_virustotal_report(vt_report)
                 else:
-                    self.error_signal.emit("Could not retrieve VirusTotal report. It is possible the website is taken down or blocked. Try analyzing manually on VirusTotal's website.")
-                    self.emit_output("<i><span style='color:lightgrey;'>Skipping VirusTotal Report due to retrieval error.</span></i><br>")
+                    self.error_signal.emit(
+                        "Could not retrieve VirusTotal report. It is possible the website is taken down or blocked. Try analyzing manually on VirusTotal's website.")
+                    self.emit_output(
+                        "<i><span style='color:lightgrey;'>Skipping VirusTotal Report due to retrieval error.</span></i><br>")
             except Exception as e:
                 self.error_signal.emit(f"An error occurred while retrieving the VirusTotal report: {e}")
-                self.emit_output("<i><span style='color:lightgrey;'>Skipping VirusTotal Report due to an error.</span></i><br>")
+                self.emit_output(
+                    "<i><span style='color:lightgrey;'>Skipping VirusTotal Report due to an error.</span></i><br>")
         else:
             self.error_signal.emit("VirusTotal API key not provided.")
-            self.emit_output("<i><span style='color:lightgrey;'>Skipping VirusTotal Report because API key is not provided.</span></i><br>")
+            self.emit_output(
+                "<i><span style='color:lightgrey;'>Skipping VirusTotal Report because API key is not provided.</span></i><br>")
 
     def process_virustotal_report(self, vt_report):
         output = "<br><b>VirusTotal Report:</b><br>"
         try:
             attributes = vt_report['data']['attributes']
             stats = attributes['last_analysis_stats']
-            output += "Analysis Statistics:<br>"
+
             for key, value in stats.items():
-                color = 'white'
+                color = '#A4A4A4'
                 if key.lower() == 'malicious' and value > 0:
-                    color = 'red'
+                    color = '#ff4d4d'
                 elif key.lower() == 'suspicious' and value > 0:
-                    color = 'orange'
-                elif key.lower() == 'harmless':
-                    color = 'green'
-                elif key.lower() == 'undetected':
-                    color = 'gray'
-                output += f"<span style='color:{color};'>{key.capitalize()}: {value}</span><br>"
+                    color = '#ffcc00'
+                elif key.lower() == 'harmless' and value > 0:
+                    color = '#66b266'
+                elif key.lower() == 'undetected' and value > 0:
+                    color = '#cccccc'
+                elif key.lower() == 'timeout' and value > 0:
+                    color = '#4d94ff'
+                output += f"<tr><td style='border: 1px solid #ddd; padding: 8px; color: {color};'>{key.capitalize()}</td>"
+                output += f"<td style='border: 1px solid #ddd; padding: 8px; color: {color};'>{value}</td></tr>"
+            output += "</tbody></table>"
 
             analysis_results = attributes.get('last_analysis_results', {})
             malicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'malicious']
             suspicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'suspicious']
 
             if malicious_vendors:
-                output += "<br><b>Malicious Detections by:</b><br>" + ', '.join(malicious_vendors) + "<br>"
+                output += "<br><b>Malicious Detections by:</b><br><ul>"
+                for vendor in malicious_vendors:
+                    output += f"<li>{vendor}</li>"
+                output += "</ul>"
             if suspicious_vendors:
-                output += "<br><b>Suspicious Detections by:</b><br>" + ', '.join(suspicious_vendors) + "<br>"
+                output += "<br><b>Suspicious Detections by:</b><br><ul>"
+                for vendor in suspicious_vendors:
+                    output += f"<li>{vendor}</li>"
+                output += "</ul>"
         except Exception as e:
             self.error_signal.emit(f"Error parsing VirusTotal report: {e}")
             self.emit_output("<i><span style='color:lightgrey;'>Skipping further processing of VirusTotal Report due to parsing error.</span></i><br>")
             return
+        output += "</div>"
         self.emit_output(output)
 
     def process_redirect_chain(self, response):
@@ -250,7 +275,7 @@ class AnalyzerThread(QThread):
             ip_address = socket.gethostbyname(hostname) if hostname else 'N/A'
 
             detection_status = 'Unknown'
-            ip_color = 'white'
+            ip_color = '#ffffff'
             if ip_address != 'N/A' and self.vt_api_key:
                 ip_report = get_virustotal_ip_report(ip_address, self.vt_api_key)
                 if ip_report:
@@ -258,25 +283,27 @@ class AnalyzerThread(QThread):
                     malicious = stats.get('malicious', 0)
                     suspicious = stats.get('suspicious', 0)
                     if malicious > 0 or suspicious > 0:
-                        ip_color = 'red'
-                        detection_status = "<span style='color:red;'>Malicious</span>"
+                        ip_color = '#ff4d4d'
+                        detection_status = "<span style='color:#ff6666;'>Malicious</span>"
                     else:
                         detection_status = "Clean"
 
             if self.sb_api_key:
                 is_safe, sb_result = check_url_safe_browsing(url, self.sb_api_key)
                 if is_safe is True:
-                    sb_status = "<span style='color:white;'>No classification</span>"
+                    sb_status = "No classification"
                 elif is_safe is False:
                     threats = ', '.join(sb_result)
-                    sb_status = f"<span style='color:red;'>Unsafe ({threats})</span>"
+                    sb_status = f"<span style='color:#ff6666;'>Unsafe ({threats})</span>"
                 else:
                     sb_status = f"<span style='color:orange;'>Error ({sb_result})</span>"
             else:
                 sb_status = "<span style='color:gray;'>Safe Browsing API Key Not Provided</span>"
 
             defanged_url = defang_url(url)
-            output += f"{i + 1}: {defanged_url} (IP: <span style='color:{ip_color};'>{ip_address}</span>) - VirusTotal IP Scan: {detection_status} - Google Safe Browsing: {sb_status}<br>"
+            output += f"<div style='margin-bottom:10px;'>"
+            output += f"<strong>{i + 1}:</strong> {defanged_url} (IP: <span style='color:{ip_color};'>{ip_address}</span>) - VirusTotal IP Scan: {detection_status} - Google Safe Browsing: {sb_status}"
+            output += "</div>"
 
             if urlscan_api_key:
                 try:
@@ -298,6 +325,7 @@ class AnalyzerThread(QThread):
 
     def process_domain_whois(self, domain, domain_info):
         output = ""
+
         registration_date = domain_info.creation_date
         registrant_country = domain_info.country
         current_year = datetime.now().year
@@ -314,26 +342,68 @@ class AnalyzerThread(QThread):
         is_not_us = is_not_us_country(registrant_country)
 
         defanged_domain = defang_domain(domain)
-        output += f"Domain: {defanged_domain}<br>"
-        reg_date_str = format_field(registration_date)
-        reg_date_color = 'red' if is_new_domain else 'white'
-        output += f"<span style='color:{reg_date_color};'>Domain Registration Date: {reg_date_str}</span><br>"
-
-        reg_country_str = format_field(registrant_country)
-        reg_country_color = 'red' if is_not_us else 'white'
-        output += f"<span style='color:{reg_country_color};'>Registrant Country: {reg_country_str}</span><br>"
-
-        output += f"Domain Expiration Date: {format_field(domain_info.expiration_date)}<br>"
-        output += f"Registrant Name: {format_field(domain_info.name)}<br>"
-        output += f"Registrant Organization: {format_field(domain_info.org)}<br>"
-        defanged_contact_email = defang_email(format_field(domain_info.emails))
-        output += f"Contact Email: {defanged_contact_email}<br>"
-        output += f"Registrar Information: {format_field(domain_info.registrar)}<br>"
-        output += f"Name Servers: {format_field(domain_info.name_servers)}<br>"
-        output += f"Domain Status: {format_field(domain_info.status)}<br>"
-        output += f"Last Updated Date: {format_field(domain_info.updated_date)}<br>"
-
+        output += f"""
+        <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 8px; background-color:#333; color:white;">Field</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; background-color:#333; color:white;">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Domain</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{defanged_domain}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Domain Registration Date</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <span style="color: {'red' if is_new_domain else 'white'};">{format_field(registration_date)}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Registrant Country</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <span style="color: {'red' if is_not_us else 'white'};">{format_field(registrant_country)}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Domain Expiration Date</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{format_field(domain_info.expiration_date)}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Registrant Name</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{format_field(domain_info.name)}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Registrant Organization</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{format_field(domain_info.org)}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Contact Email</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{defang_email(format_field(domain_info.emails))}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Registrar Information</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{format_field(domain_info.registrar)}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Name Servers</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{format_field(domain_info.name_servers)}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Domain Status</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{format_field(domain_info.status)}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">Last Updated Date</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: white;">{format_field(domain_info.updated_date)}</td>
+                </tr>
+            </tbody>
+        </table>
+        """
         return output
+
 
 class HeaderAnalyzerThread(QThread):
     output_signal = pyqtSignal(str)
@@ -492,6 +562,7 @@ class HeaderAnalyzerThread(QThread):
         output = f"<b>DMARC Compliance:</b> <span style='color:{dmarc_color};'>{dmarc_compliant}</span><br>"
         return output
 
+
 class SentimentAnalyzerThread(QThread):
     output_signal = pyqtSignal(str)
     error_signal = pyqtSignal(str)
@@ -509,6 +580,7 @@ class SentimentAnalyzerThread(QThread):
             self.error_signal.emit(error)
         elif analysis:
             self.output_signal.emit(analysis + "<br>")
+
 
 class AttachmentAnalyzerThread(QThread):
     output_signal = pyqtSignal(str)
@@ -528,7 +600,8 @@ class AttachmentAnalyzerThread(QThread):
             self.error_signal.emit("The specified file does not exist.")
             return
 
-        self.output_signal.emit("<br><b>Attachment Analysis:</b><br>")
+        self.output_signal.emit('<h1>Attachment Analysis</h1>')
+
         self.output_signal.emit("<br><i><span style='color:lightgrey;'>Uploading file to VirusTotal and Hybrid Analysis for analysis...</span></i><br>")
         try:
             vt_thread = VirusTotalUploadThread(self.file_path, self.vt_api_key)
@@ -550,6 +623,7 @@ class AttachmentAnalyzerThread(QThread):
     def emit_output(self, text):
         self.output_signal.emit(text)
 
+
 class VirusTotalUploadThread(QThread):
     output_signal = pyqtSignal(str)
     error_signal = pyqtSignal(str)
@@ -569,7 +643,8 @@ class VirusTotalUploadThread(QThread):
             if response.status_code in (200, 201):
                 analysis_id = response.json()['data']['id']
                 analysis_url = f'https://www.virustotal.com/api/v3/analyses/{analysis_id}'
-                self.output_signal.emit("<i><span style='color:lightgrey;'>File uploaded successfully to VirusTotal. Fetching analysis report...</span></i><br>")
+                time.sleep(1)
+                self.output_signal.emit("<br><i><span style='color:lightgrey;'>File uploaded successfully to VirusTotal. Fetching analysis report...</span></i><br><br>")
                 for _ in range(25):
                     time.sleep(6)
                     report_response = requests.get(analysis_url, headers=headers)
@@ -604,36 +679,49 @@ class VirusTotalUploadThread(QThread):
             return None
 
     def process_virustotal_file_report(self, vt_report):
-        output = "<br><b>VirusTotal File Report:</b><br>"
+        output = "<b><h2>VirusTotal File Report:</h2></b>"
+
         try:
             attributes = vt_report['data']['attributes']
             stats = attributes['stats']
-            output += "Analysis Statistics:<br>"
+
             for key, value in stats.items():
-                color = 'white'
-                if key.lower() == 'malicious':
-                    color = 'red'
-                elif key.lower() == 'suspicious':
-                    color = 'orange'
-                elif key.lower() == 'harmless':
-                    color = 'green'
-                elif key.lower() == 'undetected':
-                    color = 'gray'
-                output += f"<span style='color:{color};'>{key.capitalize()}: {value}</span><br>"
+                color = '#A4A4A4'
+                if key.lower() == 'malicious' and value > 0:
+                    color = '#ff6666'
+                elif key.lower() == 'suspicious' and value > 0:
+                    color = '#ffcc00'
+                elif key.lower() == 'harmless' and value > 0:
+                    color = '#66b266'
+                elif key.lower() == 'undetected' and value > 0:
+                    color = '#cccccc'
+                elif key.lower() == 'timeout' and value > 0:
+                    color = '#4d94ff'
+                output += f"<tr><td style='border: 1px solid #ddd; padding: 8px; color: {color};'>{key.capitalize()}</td>"
+                output += f"<td style='border: 1px solid #ddd; padding: 8px; color: {color};'>{value}</td></tr>"
+            output += "</tbody></table>"
 
             analysis_results = attributes.get('results', {})
             malicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'malicious']
             suspicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'suspicious']
 
             if malicious_vendors:
-                output += "<br><b>Malicious Detections by:</b><br>" + ', '.join(malicious_vendors) + "<br>"
+                output += "<br><br><b>Malicious Detections by:</b><ul>"
+                for vendor in malicious_vendors:
+                    output += f"<li>{vendor}</li>"
+                output += "</ul>"
             if suspicious_vendors:
-                output += "<br><b>Suspicious Detections by:</b><br>" + ', '.join(suspicious_vendors) + "<br>"
+                output += "<br><b>Suspicious Detections by:</b><br><ul>"
+                for vendor in suspicious_vendors:
+                    output += f"<li>{vendor}</li>"
+                output += "</ul>"
         except Exception as e:
             self.error_signal.emit(f"Error parsing VirusTotal file report: {e}")
             self.output_signal.emit("<i><span style='color:lightgrey;'>Skipping further processing of VirusTotal File Report due to parsing error.</span></i><br>")
             return
+        output += "</div>"
         self.output_signal.emit(output)
+
 
 class HybridAnalysisUploadThread(QThread):
     output_signal = pyqtSignal(str)
@@ -658,27 +746,71 @@ class HybridAnalysisUploadThread(QThread):
             if upload_response.status_code in [200, 201]:
                 upload_data = upload_response.json()
                 hash_value = upload_data.get("sha256")
-                self.output_signal.emit("<i><span style='color:lightgrey;'>File uploaded successfully to Hybrid Analysis. Fetching analysis report...</span></i><br>")
+                self.output_signal.emit("<i><span style='color:lightgrey;'>File uploaded successfully to Hybrid Analysis. Fetching analysis report...</span></i><br><br>")
 
                 if hash_value:
                     lookup_response = requests.get(f"{overview_endpoint}/{hash_value}", headers=headers)
+
                     if lookup_response.status_code == 200:
                         data = lookup_response.json()
+
                         if data:
                             verdict = data.get("verdict", "").lower()
                             threat_score = data.get("threat_score", 0)
-                            verdict_color = 'red' if verdict == "malicious" else 'white'
+                            verdict_color = 'red' if verdict == "malicious" else 'green'
+
                             try:
                                 threat_score_value = float(threat_score)
-                                score_color = 'red' if threat_score_value >= 70 else 'white'
+                                if threat_score_value >= 70:
+                                    score_color = 'red'
+                                elif threat_score_value >= 40:
+                                    score_color = 'orange'
+                                else:
+                                    score_color = 'green'
                             except (ValueError, TypeError):
-                                score_color = 'white'
-                            output = "<br><b>Hybrid Analysis Report:</b><br>"
-                            output += f"<b>File Name:</b> {data.get('last_file_name')}<br>"
-                            output += f"<b>Threat Score:</b> <span style='color:{score_color};'>{threat_score}</span><br>"
-                            output += f"<b>Verdict:</b> <span style='color:{verdict_color};'>{data.get('verdict')}</span><br>"
-                            output += f"<b>Type:</b> {data.get('type')}<br>"
-                            output += f"<b>Tags:</b> {', '.join(data.get('tags', []))}<br>"
+                                threat_score_value = 0
+                                score_color = 'gray'
+
+                            output = """
+                            <div style='font-family: Arial, sans-serif;'>
+                                <h2>Hybrid Analysis Report:</h2>
+                                <table border='1' cellpadding='10' cellspacing='0' style='border-collapse: collapse; width: 100%;'>
+                                    <tr style='background-color: #333;'>
+                                        <th>Field</th>
+                                        <th>Value</th>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>File Name</strong></td>
+                                        <td>{file_name}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Threat Score</strong></td>
+                                        <td style='color: {score_color};'>{threat_score}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Verdict</strong></td>
+                                        <td style='color: {verdict_color};'>{verdict_capitalized}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Type</strong></td>
+                                        <td>{file_type}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tags</strong></td>
+                                        <td>{tags}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            """.format(
+                                file_name=data.get('last_file_name', 'N/A'),
+                                threat_score=threat_score,
+                                score_color=score_color,
+                                verdict_capitalized=data.get('verdict', 'N/A').capitalize(),
+                                verdict_color=verdict_color,
+                                file_type=data.get('type', 'N/A'),
+                                tags=', '.join(data.get('tags', [])) if data.get('tags') else 'None'
+                            )
+
                             self.output_signal.emit(output)
                         else:
                             self.output_signal.emit("No data found for the provided hash.")
