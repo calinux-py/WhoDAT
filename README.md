@@ -9,7 +9,7 @@ Analyze emails, URLs, headers, IPs, and attachments for threats--using free APIs
 
 [<img src="https://github.com/calinux-py/WhoDAT/blob/main/config/pocimg.png?raw=true" alt="WhoDAT" width="63%">](https://github.com/calinux-py/WhoDAT/blob/main/config/pocimg.png?raw=true)
 
-[Download the portable executable version here!](https://github.com/calinux-py/WhoDAT/releases/download/whodatv1.2/WhoDATv1.2.zip)
+[Download the portable executable version here!](https://github.com/calinux-py/WhoDAT/releases/download/whodatv1.3/WhoDATv1.3.zip)
 
 ## Features
 
