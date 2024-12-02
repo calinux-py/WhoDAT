@@ -105,4 +105,4 @@ Interpret Results: Results are presented with color-coded risk indicators, makin
 - analysis.py	Core analysis logic, with background threads handling various tasks such as WHOIS checks, header parsing.
 - api.py	Manages API requests to external services (VirusTotal, URLScan, Safe Browsing, OpenAI) and processes responses.
 
-[<img src="https://github.com/calinux-py/WhoDAT/blob/main/config/2024-11-07%2018-40-02.gif?raw=true" alt="UniUI" width="63%">](https://github.com/calinux-py/WhoDAT/blob/main/config/poc.gif?raw=true)
+[<img src="https://github.com/calinux-py/WhoDAT/blob/main/config/poc.gif?raw=true" alt="WhoDAT" width="63%">](https://github.com/calinux-py/WhoDAT/blob/main/config/poc.gif?raw=true)
