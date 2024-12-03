@@ -81,7 +81,7 @@ class AnalyzerThread(QThread):
                 self.error_signal.emit("No email or link provided.")
                 self.emit_output("<i><span style='color:lightgrey;'>Skipping analysis because no input was provided.</span></i><br>")
             if self.openai_api_key and self.report.strip():
-                self.emit_output("<br><i><span style='color:lightgrey;'>Sending report to AI for analysis...</span></i><br><br>")
+                self.emit_output("<i><span style='color:lightgrey;'>Sending report to AI for analysis...</span></i><br><br>")
                 ai_response, ai_error = get_openai_analysis(self.report)
                 if ai_error:
                     self.error_signal.emit(ai_error)
@@ -167,10 +167,10 @@ class AnalyzerThread(QThread):
         is_up = self.check_website_status(self.link)
         if is_up:
             self.emit_output(
-                f"[ + ] The website {defang_url(self.link)} is <span style='color:#66b266;'>UP</span>.<br>")
+                f"<br>[ + ] The website {defang_url(self.link)} is <span style='color:#66b266;'>UP</span>.<br>")
         else:
             self.emit_output(
-                f"[ - ] The website {defang_url(self.link)} is <span style='color:#ff6666;'>DOWN.</span><br>")
+                f"<br>[ - ] The website {defang_url(self.link)} is <span style='color:#ff6666;'>DOWN.</span><br>")
 
         parsed_start_url = urllib.parse.urlparse(full_link)
         start_domain = parsed_start_url.hostname
@@ -247,14 +247,14 @@ class AnalyzerThread(QThread):
             suspicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'suspicious']
 
             if malicious_vendors:
-                output += "<br><b>Malicious Detections by:</b><br><ul>"
+                output += "<br><br><b>Malicious Detections by:</b><br>"
                 for vendor in malicious_vendors:
-                    output += f"<li>{vendor}</li>"
+                    output += f"{vendor}<br>"
                 output += "</ul>"
             if suspicious_vendors:
-                output += "<br><b>Suspicious Detections by:</b><br><ul>"
+                output += "<br><b>Suspicious Detections by:</b><br>"
                 for vendor in suspicious_vendors:
-                    output += f"<li>{vendor}</li>"
+                    output += f"{vendor}<br>"
                 output += "</ul>"
         except Exception as e:
             self.error_signal.emit(f"Error parsing VirusTotal report: {e}")
@@ -706,14 +706,14 @@ class VirusTotalUploadThread(QThread):
             suspicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'suspicious']
 
             if malicious_vendors:
-                output += "<br><br><b>Malicious Detections by:</b><ul>"
+                output += "<br><br><b>Malicious Detections by:</b>"
                 for vendor in malicious_vendors:
-                    output += f"<li>{vendor}</li>"
+                    output += f"{vendor}<br>"
                 output += "</ul>"
             if suspicious_vendors:
                 output += "<br><b>Suspicious Detections by:</b><br><ul>"
                 for vendor in suspicious_vendors:
-                    output += f"<li>{vendor}</li>"
+                    output += f"{vendor}<br>"
                 output += "</ul>"
         except Exception as e:
             self.error_signal.emit(f"Error parsing VirusTotal file report: {e}")
