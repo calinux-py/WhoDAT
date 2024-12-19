@@ -161,7 +161,7 @@ class AnalyzerThread(QThread):
             return
 
         self.emit_output(
-            f"<div style='background-color: #5E5E5E; padding: 30px; margin: 20px 0; border-radius: 15px;'><b style='font-size: 24px;'><h1>Analyzing Link</h1></b></div>Target: {defang_url(self.link)}<br>")
+            f"<div style='background-color: #646464;color: white; padding: 30px; margin: 20px 0; border-radius: 15px;'><b style='font-size: 24px;'><h1>Analyzing Link</h1></b></div>Target: {defang_url(self.link)}<br>")
 
         self.emit_output(f"<br><b>Checking if website is up or down:</b> {defang_url(self.link)}")
         is_up = self.check_website_status(self.link)
