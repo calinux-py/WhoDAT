@@ -74,9 +74,9 @@ class AnalyzerThread(QThread):
             dmarc_records = [str(rdata).strip('"') for rdata in answers]
             return '; '.join(dmarc_records)
         except dns.resolver.NoAnswer:
-            return "No DMARC record found."
+            return "<span style='color:#ff6666;'>No DMARC record found.<br>Email could be spoofed.</span><br>"
         except dns.resolver.NXDOMAIN:
-            return "No DMARC record found."
+            return "<span style='color:#ff6666;'>No DMARC record found.<br>Email could be spoofed.</span><br>"
         except Exception as e:
             return f"Error fetching DMARC record: {e}"
 
@@ -183,19 +183,16 @@ class AnalyzerThread(QThread):
 
         dmarc_record = self.get_dmarc_record(registered_domain)
 
-        if not dmarc_record:
-            output = f"<b>DMARC Record:</b> <span style='color:#ff6666;'>No DMARC record found</span><br>"
+        if "p=none" in dmarc_record.lower():
+            modified_record = re.sub(
+                r'(p=none)',
+                r'<span style="color:#ff6666;">\1</span>',
+                dmarc_record,
+                flags=re.IGNORECASE
+            )
+            output = f"DMARC Record: {modified_record}. <span style='color:#ff6666;'><br>Email could be spoofed.</span><br>"
         else:
-            if "p=none" in dmarc_record.lower():
-                modified_record = re.sub(
-                    r'(p=none)',
-                    r'<span style="color:#ff6666;">\1</span>',
-                    dmarc_record,
-                    flags=re.IGNORECASE
-                )
-                output = f"DMARC Record: {modified_record}<br>"
-            else:
-                output = f"DMARC Record: {dmarc_record}<br>"
+            output = f"DMARC Record: {dmarc_record}<br>"
 
         self.emit_output(output)
 
