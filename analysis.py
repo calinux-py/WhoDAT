@@ -17,6 +17,8 @@ from dateutil import parser as date_parser
 import matplotlib.pyplot as plt
 import io
 import base64
+import dns.resolver
+
 
 from config import (
     get_virustotal_api_key,
@@ -64,6 +66,19 @@ class AnalyzerThread(QThread):
         self.sb_api_key = sb_api_key
         self.openai_api_key = openai_api_key
         self.report = ""
+        self.processed_domains = set()
+
+    def get_dmarc_record(self, domain):
+        try:
+            answers = dns.resolver.resolve('_dmarc.' + domain, 'TXT')
+            dmarc_records = [str(rdata).strip('"') for rdata in answers]
+            return '; '.join(dmarc_records)
+        except dns.resolver.NoAnswer:
+            return "No DMARC record found."
+        except dns.resolver.NXDOMAIN:
+            return "No DMARC record found."
+        except Exception as e:
+            return f"Error fetching DMARC record: {e}"
 
     def emit_output(self, text):
         plain_text = re.sub('<[^<]+?>', '', text)
@@ -73,24 +88,29 @@ class AnalyzerThread(QThread):
     def run(self):
         try:
             if self.email:
-                self.emit_output(f"<div style='background-color: #5E5E5E; padding: 30px; margin: 20px 0; border-radius: 15px;'><b style='font-size: 24px;'><h1>Analyzing Email Address</h1></b></div>Target: {defang_email(self.email)}<br>")
+                self.emit_output(
+                    f"<div style='background-color: #5E5E5E; padding: 30px; margin: 20px 0; border-radius: 15px;'><b style='font-size: 24px;'><h1>Analyzing Email Address</h1></b></div>Target: {defang_email(self.email)}<br>")
                 self.process_email_input()
             if self.link:
                 self.process_link_input()
             if not self.email and not self.link:
                 self.error_signal.emit("No email or link provided.")
-                self.emit_output("<i><span style='color:white;'>Skipping analysis because no input was provided.</span></i><br>")
+                self.emit_output(
+                    "<i><span style='color:white;'>Skipping analysis because no input was provided.</span></i><br>")
             if self.openai_api_key and self.report.strip():
-                self.emit_output("<i><span style='color:white;'>Sending report to AI for analysis...</span></i><br><br>")
+                self.emit_output(
+                    "<i><span style='color:white;'>Sending report to AI for analysis...</span></i><br><br>")
                 ai_response, ai_error = get_openai_analysis(self.report)
                 if ai_error:
                     self.error_signal.emit(ai_error)
-                    self.emit_output("<i><span style='color:white;'>Skipping AI Analysis due to an error.</span></i><br>")
+                    self.emit_output(
+                        "<i><span style='color:white;'>Skipping AI Analysis due to an error.</span></i><br>")
                 elif ai_response:
                     self.emit_output(f"{ai_response}<br>")
         except Exception as e:
             self.error_signal.emit(f"An unexpected error occurred: {e}")
-            self.emit_output("<i><span style='color:white;'>Skipping analysis due to an unexpected error.</span></i><br>")
+            self.emit_output(
+                "<i><span style='color:white;'>Skipping analysis due to an unexpected error.</span></i><br>")
 
     def check_website_status(self, url):
         full_link = url
@@ -106,6 +126,13 @@ class AnalyzerThread(QThread):
             return False
 
     def fetch_and_process_whois(self, domain_name, domain_label):
+        if domain_name in self.processed_domains:
+            self.emit_output(
+                f"<i><span style='color:white;'>WHOIS for {domain_label} ({defang_domain(domain_name)}) already processed. Skipping.</span></i><br>")
+            return
+
+        self.processed_domains.add(domain_name)
+
         try:
             domain_info = whois.whois(domain_name)
             output = f"<b>WHOIS Information for {domain_label}:</b><br>"
@@ -120,30 +147,63 @@ class AnalyzerThread(QThread):
                         '<span style="color:#ff6666">YES</span>' if disposable_status else 'No') + "<br>"
                     self.emit_output(output)
                 else:
-                    self.error_signal.emit(f"Error checking disposable status for {self.email}: {response.status_code}")
-                    self.emit_output("<i><span style='color:white;'>Skipping Disposable Email Check due to an error.</span></i><br>")
+                    self.error_signal.emit(
+                        f"Error checking disposable status for {self.email}: {response.status_code}")
+                    self.emit_output(
+                        "<i><span style='color:white;'>Skipping Disposable Email Check due to an error.</span></i><br>")
         except Exception as e:
-            self.error_signal.emit(f"Error fetching WHOIS data for {domain_label} {defang_domain(domain_name)}: {e}")
-            self.emit_output(f"<i><span style='color:white;'>Skipping WHOIS analysis for {domain_label} due to an error.</span></i><br>")
+            self.error_signal.emit(
+                f"Error fetching WHOIS data for {domain_label} {defang_domain(domain_name)}: {e}")
+            self.emit_output(
+                f"<i><span style='color:white;'>Skipping WHOIS analysis for {domain_label} due to an error.</span></i><br>")
 
     def process_email_input(self):
         email_pattern = r'^[^@]+@([^@]+\.[^@]+)$'
         match = re.match(email_pattern, self.email)
+
         if not match:
             self.error_signal.emit("Invalid email address.")
-            self.emit_output("<i><span style='color:white;'>Skipping Email Analysis due to an invalid email address.</span></i><br>")
+            self.emit_output(
+                "<i><span style='color:white;'>Skipping Email Analysis due to an invalid email address.</span></i><br>"
+            )
             return
+
         domain = match.group(1)
         ext = tldextract.extract(domain)
         registered_domain = ext.registered_domain
+
         if not registered_domain:
             self.error_signal.emit("Could not extract registered domain from email.")
-            self.emit_output("<i><span style='color:white;'>Skipping Email Analysis due to inability to extract domain.</span></i><br>")
+            self.emit_output(
+                "<i><span style='color:white;'>Skipping Email Analysis due to inability to extract domain.</span></i><br>"
+            )
             return
 
         self.fetch_and_process_whois(registered_domain, "Email Domain")
+
+        dmarc_record = self.get_dmarc_record(registered_domain)
+
+        if not dmarc_record:
+            output = f"<b>DMARC Record:</b> <span style='color:#ff6666;'>No DMARC record found</span><br>"
+        else:
+            if "p=none" in dmarc_record.lower():
+                modified_record = re.sub(
+                    r'(p=none)',
+                    r'<span style="color:#ff6666;">\1</span>',
+                    dmarc_record,
+                    flags=re.IGNORECASE
+                )
+                output = f"DMARC Record: {modified_record}<br>"
+            else:
+                output = f"DMARC Record: {dmarc_record}<br>"
+
+        self.emit_output(output)
+
         if self.email and self.is_free_email(registered_domain):
-            self.emit_output(f"Email Domain {registered_domain} is a <span style='color:#ff6666;'>FREE</span> email provider.<br>")
+            self.emit_output(
+                f"Email Domain {registered_domain} is a <span style='color:#ff6666;'>FREE</span> email provider.<br>"
+            )
+            return
 
     def is_free_email(self, domain):
         return domain.lower() in FREE_EMAIL_DOMAINS
@@ -193,7 +253,7 @@ class AnalyzerThread(QThread):
         final_registered_domain = ext.registered_domain
 
         if "safebrowse.io" not in final_url.lower():
-            if final_registered_domain:
+            if final_registered_domain and final_registered_domain != start_registered_domain:
                 self.fetch_and_process_whois(final_registered_domain, "Final URL Domain")
         else:
             self.emit_output(
@@ -226,6 +286,7 @@ class AnalyzerThread(QThread):
             attributes = vt_report['data']['attributes']
             stats = attributes['last_analysis_stats']
 
+            output += "<table style='width:100%; border-collapse: collapse;'><tbody>"
             for key, value in stats.items():
                 color = '#A4A4A4'
                 if key.lower() == 'malicious' and value > 0:
@@ -243,8 +304,10 @@ class AnalyzerThread(QThread):
             output += "</tbody></table><br>"
 
             analysis_results = attributes.get('last_analysis_results', {})
-            malicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'malicious']
-            suspicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'suspicious']
+            malicious_vendors = [vendor for vendor, result in analysis_results.items() if
+                                 result.get('category') == 'malicious']
+            suspicious_vendors = [vendor for vendor, result in analysis_results.items() if
+                                  result.get('category') == 'suspicious']
 
             if malicious_vendors:
                 output += "<br><br><b>Malicious Detections by:</b><br>"
@@ -258,7 +321,8 @@ class AnalyzerThread(QThread):
                 output += "</ul>"
         except Exception as e:
             self.error_signal.emit(f"Error parsing VirusTotal report: {e}")
-            self.emit_output("<i><span style='color:white;'>Skipping further processing of VirusTotal Report due to parsing error.</span></i><br>")
+            self.emit_output(
+                "<i><span style='color:white;'>Skipping further processing of VirusTotal Report due to parsing error.</span></i><br>")
             return
         output += "</div>"
         self.emit_output(output)
@@ -272,7 +336,12 @@ class AnalyzerThread(QThread):
             url = resp.url
             parsed_url = urllib.parse.urlparse(url)
             hostname = parsed_url.hostname
-            ip_address = socket.gethostbyname(hostname) if hostname else 'N/A'
+            ip_address = 'N/A'
+            if hostname:
+                try:
+                    ip_address = socket.gethostbyname(hostname)
+                except Exception:
+                    ip_address = 'N/A'
 
             detection_status = 'Unknown'
             ip_color = ''
@@ -311,7 +380,7 @@ class AnalyzerThread(QThread):
                     if urlscan_report:
                         verdict = "Malicious" if urlscan_report['verdict'] == "malicious" else "No classification"
                         output += "<br><b>URLScan Verdict:</b> " + verdict + "<br>"
-                        if urlscan_report['screenshot']:
+                        if urlscan_report.get('screenshot'):
                             output += f"<b>URLScan Screenshot:</b><br><img src='data:image/png;base64,{urlscan_report['screenshot']}' width='700'><br>"
                             if urlscan_report.get('screenshot_url'):
                                 output += f"<br><b>URLScan Screenshot URL:</b> {urlscan_report['screenshot_url']}<br>"
@@ -319,7 +388,8 @@ class AnalyzerThread(QThread):
                             output += "<b>URLScan Screenshot:</b> Not available. It is possible the URL is a download or your API limit for UrlScan has exceeded.<br>"
                 except Exception as e:
                     self.error_signal.emit(f"Error fetching URLScan report for {defang_url(url)}: {e}")
-                    self.emit_output("<i><span style='color:white;'>Skipping URLScan Verdict due to an error.</span></i><br>")
+                    self.emit_output(
+                        "<i><span style='color:white;'>Skipping URLScan Verdict due to an error.</span></i><br>")
             output += "<br>"
         self.emit_output(output)
 
@@ -331,10 +401,14 @@ class AnalyzerThread(QThread):
         current_year = datetime.now().year
 
         def is_created_this_year(registration_date):
+            if not registration_date:
+                return False
             dates = registration_date if isinstance(registration_date, list) else [registration_date]
             return any(date.year == current_year for date in dates if isinstance(date, datetime))
 
         def is_not_us_country(registrant_country):
+            if not registrant_country:
+                return False
             countries = registrant_country if isinstance(registrant_country, list) else [registrant_country]
             return any(country.strip().upper() != 'US' for country in countries if country)
 
