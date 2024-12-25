@@ -287,7 +287,7 @@ class AnalyzerThread(QThread):
             for key, value in stats.items():
                 color = '#A4A4A4'
                 if key.lower() == 'malicious' and value > 0:
-                    color = '#ff4d4d'
+                    color = '#ff6666'
                 elif key.lower() == 'suspicious' and value > 0:
                     color = '#ffcc00'
                 elif key.lower() == 'harmless' and value > 0:
