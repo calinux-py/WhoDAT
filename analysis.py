@@ -429,13 +429,13 @@ class AnalyzerThread(QThread):
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 8px;">Domain Registration Date</td>
                     <td style="border: 1px solid #ddd; padding: 8px;">
-                        <span style="color: {'red' if is_new_domain else ''};">{format_field(registration_date)}</span>
+                        <span style="color: {'#ff6666' if is_new_domain else ''};">{format_field(registration_date)}</span>
                     </td>
                 </tr>
                 <tr>
                     <td style="border: 1px solid #ddd; padding: 8px;">Registrant Country</td>
                     <td style="border: 1px solid #ddd; padding: 8px;">
-                        <span style="color: {'red' if is_not_us else ''};">{format_field(registrant_country)}</span>
+                        <span style="color: {'#ff6666' if is_not_us else ''};">{format_field(registrant_country)}</span>
                     </td>
                 </tr>
                 <tr>
@@ -498,7 +498,7 @@ class HeaderAnalyzerThread(QThread):
 
             originating_ip = self.extract_originating_ip(received_headers)
             country = self.get_ip_country(originating_ip)
-            text_color = 'red' if country != 'US' else ''
+            text_color = '#ff6666' if country != 'US' else ''
             output += f"<br><b>Originating IP Address:</b> <span style='color:{text_color};'>{originating_ip}</span><br>"
             output += self.get_ip_location(originating_ip, country, text_color)
             output += f"<b>From Address:</b> {from_header}<br>"
@@ -581,7 +581,7 @@ class HeaderAnalyzerThread(QThread):
             pacific_tz = pytz.timezone('America/Los_Angeles')
             date_pacific = date_obj.astimezone(pacific_tz)
             hour = date_pacific.hour
-            time_color = "red" if (21 <= hour or hour < 5) else ""
+            time_color = "#ff6666" if (21 <= hour or hour < 5) else ""
             date_pacific_formatted = date_pacific.strftime('%I:%M %p, %d %b %Y')
             return f"<span style='color:{time_color};'>{date_pacific_formatted}</span>"
         except Exception:
@@ -600,7 +600,7 @@ class HeaderAnalyzerThread(QThread):
                 from_address = parseaddr(msg['From'])[1]
                 from_domain = from_address.split('@')[-1]
                 spf_alignment = "Aligned" if mailfrom_domain.lower() == from_domain.lower() else "Not Aligned"
-        spf_color = "red" if spf_authenticated != "Passed" or spf_alignment != "Aligned" else ""
+        spf_color = "#ff6666" if spf_authenticated != "Passed" or spf_alignment != "Aligned" else ""
         output = f"<br><br><b>SPF Authenticated:</b> <span style='color:{spf_color};'>{spf_authenticated}</span><br>"
         output += f"<b>SPF Alignment:</b> <span style='color:{spf_color};'>{spf_alignment}</span><br>"
         return output
@@ -618,7 +618,7 @@ class HeaderAnalyzerThread(QThread):
                 from_address = parseaddr(msg['From'])[1]
                 from_domain = from_address.split('@')[-1]
                 dkim_alignment = "Aligned" if headerd_domain.lower() == from_domain.lower() else "Not Aligned"
-        dkim_color = "red" if dkim_authenticated != "Passed" or dkim_alignment != "Aligned" else ""
+        dkim_color = "#ff6666" if dkim_authenticated != "Passed" or dkim_alignment != "Aligned" else ""
         output = f"<b>DKIM Authenticated:</b> <span style='color:{dkim_color};'>{dkim_authenticated}</span><br>"
         output += f"<b>DKIM Alignment:</b> <span style='color:{dkim_color};'>{dkim_alignment}</span><br>"
         return output
@@ -629,7 +629,7 @@ class HeaderAnalyzerThread(QThread):
             dmarc_match = re.search(r'dmarc=(\w+)', auth_result)
             if dmarc_match and dmarc_match.group(1).lower() == 'pass':
                 dmarc_compliant = "Passed"
-        dmarc_color = "red" if dmarc_compliant != "Passed" else ""
+        dmarc_color = "#ff6666" if dmarc_compliant != "Passed" else ""
         output = f"<b>DMARC Compliance:</b> <span style='color:{dmarc_color};'>{dmarc_compliant}</span><br>"
         return output
 
@@ -671,9 +671,8 @@ class AttachmentAnalyzerThread(QThread):
             self.error_signal.emit("The specified file does not exist.")
             return
 
-        self.output_signal.emit('<h1>Attachment Analysis</h1>')
+        self.output_signal.emit("<div style='background-color: #5E5E5E; padding: 30px; margin: 20px 0; border-radius: 15px;'><b style='font-size: 24px;'><h1>Attachment Analysis</h1></b></div><br><i><span style='color:white;'>Uploading file to VirusTotal and Hybrid Analysis for analysis...</span></i><br>")
 
-        self.output_signal.emit("<br><i><span style='color:white;'>Uploading file to VirusTotal and Hybrid Analysis for analysis...</span></i><br>")
         try:
             vt_thread = VirusTotalUploadThread(self.file_path, self.vt_api_key)
             ha_thread = HybridAnalysisUploadThread(self.file_path, self.ha_api_key)
@@ -777,7 +776,7 @@ class VirusTotalUploadThread(QThread):
             suspicious_vendors = [vendor for vendor, result in analysis_results.items() if result.get('category') == 'suspicious']
 
             if malicious_vendors:
-                output += "<br><br><b>Malicious Detections by:</b>"
+                output += "<br><br><b>Malicious Detections by:</b><br>"
                 for vendor in malicious_vendors:
                     output += f"{vendor}<br>"
                 output += "</ul>"
@@ -828,12 +827,12 @@ class HybridAnalysisUploadThread(QThread):
                         if data:
                             verdict = data.get("verdict", "").lower()
                             threat_score = data.get("threat_score", 0)
-                            verdict_color = 'red' if verdict == "malicious" else 'green'
+                            verdict_color = '#ff6666' if verdict == "malicious" else 'green'
 
                             try:
                                 threat_score_value = float(threat_score)
                                 if threat_score_value >= 70:
-                                    score_color = 'red'
+                                    score_color = '#ff6666'
                                 elif threat_score_value >= 40:
                                     score_color = 'orange'
                                 else:
