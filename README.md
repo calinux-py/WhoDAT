@@ -20,6 +20,7 @@ Analyze URLs, email addresses, and IP addresses to reveal their threat level:
 - **URL Analysis**: Scans URLs to detect malware, phishing attempts, and suspicious redirects.
 - **IP Address Analysis**: Checks if an IP address has been associated with previous malicious activity.
 - **WHOIS Data**: Retrieves WHOIS information for domains to confirm registration dates, geographical origins, and other key details.
+- **DMARC Analysis**: Check if an email has been potentially spoofed.
 
 ### 📨 Header Analyzer
 Uncover security issues hidden in email headers:
