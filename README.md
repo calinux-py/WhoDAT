@@ -37,6 +37,7 @@ Detect phishing and other sus language in email content:
 Ensure attachments are safe before opening:
 - **File Scanning**: Uploads files to VirusTotal and Hybrid Analysis to see if malicious or sus.
 - **Real-Time Reports**: Displays detailed findings from VirusTotal and Hybrid Analysis, including detection by antivirus engines and potential threat levels.
+- **QR Code Scanning**: Scan QR codes and automatically process the embedded link for malicious activity.
 
 ---
 
