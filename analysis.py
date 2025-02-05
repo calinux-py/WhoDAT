@@ -18,7 +18,8 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import dns.resolver
-
+from PIL import Image
+from pyzbar.pyzbar import decode
 
 from config import (
     get_virustotal_api_key,
@@ -664,6 +665,37 @@ class AttachmentAnalyzerThread(QThread):
         self.ha_api_key = ha_api_key
 
     def run(self):
+        # --- Begin: New QR Code handling ---
+        if self.file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+            try:
+                image = Image.open(self.file_path)
+                qr_codes = decode(image)
+                if qr_codes:
+                    qr_data = qr_codes[0].data.decode('utf-8')
+                    self.output_signal.emit(f"<br><b>QR Code detected!</b>")
+                    if qr_data.startswith("http://") or qr_data.startswith("https://"):
+                        self.output_signal.emit("Running link analyzer on QR Code URL...<br>")
+                        sb_api_key = get_safe_browsing_api_key()
+                        openai_api_key = get_openai_api_key()
+                        analyzer_thread = AnalyzerThread(
+                            email=None,
+                            link=qr_data,
+                            vt_api_key=self.vt_api_key,
+                            sb_api_key=sb_api_key,
+                            openai_api_key=openai_api_key
+                        )
+                        analyzer_thread.output_signal.connect(self.output_signal)
+                        analyzer_thread.error_signal.connect(self.error_signal.emit)
+                        analyzer_thread.start()
+                        analyzer_thread.wait()
+                    else:
+                        self.output_signal.emit("The QR Code does not contain a valid URL.<br>")
+                    # After processing the QR code, do not continue with file upload analysis.
+                    return
+            except Exception as e:
+                self.error_signal.emit(f"Error decoding QR Code: {e}")
+        # --- End: New QR Code handling ---
+
         if not self.file_path:
             self.error_signal.emit("No file selected.")
             return
